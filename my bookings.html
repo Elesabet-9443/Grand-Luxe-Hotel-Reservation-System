@@ -1,0 +1,390 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My Bookings - Grand Luxe Hotel</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f4f9;
+            color: #14213d;
+        }
+
+        header {
+            background: #14213d;
+            color: white;
+            text-align: center;
+            padding: 30px 15px;
+        }
+
+        header h1 {
+            margin: 0 0 10px;
+        }
+
+        nav {
+            background: #263f5a;
+            padding: 16px;
+            text-align: center;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 10px;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        main {
+            max-width: 1100px;
+            min-height: 450px;
+            margin: 35px auto;
+            padding: 0 20px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 3px 10px #00000012;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        #message {
+            padding: 15px;
+            background: #edf2f8;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .error {
+            color: #b42318;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 650px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 15px;
+            border-bottom: 1px solid #e3e8ef;
+        }
+
+        th {
+            background: #edf2f8;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 7px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            text-transform: capitalize;
+        }
+
+        .pending {
+            background: #fff1cb;
+            color: #805500;
+        }
+
+        .confirmed {
+            background: #d7f5e4;
+            color: #11663c;
+        }
+
+        .cancelled {
+            background: #ffe0de;
+            color: #a12c25;
+        }
+
+        button {
+            background: #2457a7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 11px 17px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        button:hover {
+            background: #173e7c;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 30px;
+            color: #526078;
+        }
+
+        footer {
+            background: #14213d;
+            color: white;
+            text-align: center;
+            padding: 25px;
+            margin-top: 40px;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>GRAND LUXE HOTEL</h1>
+    <p>My Reservations</p>
+</header>
+
+<nav>
+    <a href="index.html">Home</a>
+    <a href="rooms.html">Rooms</a>
+    <a href="booking.html">Book a Room</a>
+    <a href="my-bookings.html">My Bookings</a>
+    <a href="login.html" id="loginLink">Login</a>
+    <a href="#" id="logoutLink" hidden>Logout</a>
+</nav>
+
+<main>
+    <div class="panel">
+
+        <h2>My Bookings</h2>
+
+        <p id="message" role="status" aria-live="polite">
+            Checking your login...
+        </p>
+
+        <section id="bookingsSection" hidden>
+
+            <button type="button" id="refreshBtn">
+                Refresh My Bookings
+            </button>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Booking ID</th>
+                            <th>Room</th>
+                            <th>Check-in</th>
+                            <th>Check-out</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="bookingsBody"></tbody>
+                </table>
+            </div>
+
+        </section>
+
+    </div>
+</main>
+
+<footer>
+    Grand Luxe Hotel | My Bookings
+</footer>
+
+<!-- Supabase library -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Your existing Supabase configuration -->
+<script src="./supabase.js"></script>
+
+<script>
+    const message = document.getElementById("message");
+    const bookingsSection =
+        document.getElementById("bookingsSection");
+
+    const bookingsBody =
+        document.getElementById("bookingsBody");
+
+    const loginLink =
+        document.getElementById("loginLink");
+
+    const logoutLink =
+        document.getElementById("logoutLink");
+
+    let currentUser = null;
+
+    function showMessage(text, isError = false) {
+        message.textContent = text;
+        message.className = isError ? "error" : "";
+    }
+
+    function addCell(row, value) {
+        const cell = document.createElement("td");
+
+        cell.textContent =
+            value === null || value === undefined
+                ? "—"
+                : String(value);
+
+        row.appendChild(cell);
+        return cell;
+    }
+
+    async function checkLogin() {
+        try {
+            if (!window.supabaseClient) {
+                throw new Error(
+                    "Supabase client not loaded. Check supabase.js."
+                );
+            }
+
+            const {
+                data: { user },
+                error
+            } = await window.supabaseClient.auth.getUser();
+
+            if (error || !user) {
+                showMessage(
+                    "Please log in to view your reservations."
+                );
+                return;
+            }
+
+            currentUser = user;
+
+            loginLink.hidden = true;
+            logoutLink.hidden = false;
+            bookingsSection.hidden = false;
+
+            await loadMyBookings();
+
+        } catch (error) {
+            showMessage(
+                "Connection error: " + error.message,
+                true
+            );
+        }
+    }
+
+    async function loadMyBookings() {
+        if (!currentUser) {
+            showMessage("Please log in first.", true);
+            return;
+        }
+
+        showMessage("Loading your reservations...");
+        bookingsBody.replaceChildren();
+
+        try {
+            const { data: bookings, error } =
+                await window.supabaseClient
+                    .from("bookings")
+                    .select(
+                        "id, room_id, check_in, check_out, status, rooms(room_number, room_type)"
+                    )
+                    .eq("user_id", currentUser.id)
+                    .order("created_at", {
+                        ascending: false
+                    });
+
+            if (error) {
+                throw error;
+            }
+
+            if (!bookings || bookings.length === 0) {
+                showMessage(
+                    "You do not have any reservations yet."
+                );
+                return;
+            }
+
+            bookings.forEach(booking => {
+                const row = document.createElement("tr");
+
+                addCell(row, booking.id);
+
+                const roomName = booking.rooms
+                    ? booking.rooms.room_number +
+                      " (" + booking.rooms.room_type + ")"
+                    : "Room ID " + booking.room_id;
+
+                addCell(row, roomName);
+                addCell(row, booking.check_in);
+                addCell(row, booking.check_out);
+
+                const statusCell =
+                    document.createElement("td");
+
+                const statusBadge =
+                    document.createElement("span");
+
+                const status = booking.status || "pending";
+
+                statusBadge.className =
+                    "status " + status;
+
+                statusBadge.textContent = status;
+
+                statusCell.appendChild(statusBadge);
+                row.appendChild(statusCell);
+
+                bookingsBody.appendChild(row);
+            });
+
+            showMessage(
+                "Successfully loaded " +
+                bookings.length +
+                " reservation(s)."
+            );
+
+        } catch (error) {
+            showMessage(
+                "Could not load bookings: " + error.message,
+                true
+            );
+        }
+    }
+
+    document.getElementById("refreshBtn")
+        .addEventListener("click", loadMyBookings);
+
+    logoutLink.addEventListener("click", async event => {
+        event.preventDefault();
+
+        const { error } =
+            await window.supabaseClient.auth.signOut();
+
+        if (error) {
+            showMessage(
+                "Logout failed: " + error.message,
+                true
+            );
+            return;
+        }
+
+        window.location.href = "login.html";
+    });
+
+    checkLogin();
+</script>
+
+</body>
+</html>

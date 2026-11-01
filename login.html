@@ -1,0 +1,235 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Customer Login - Grand Luxe Hotel</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+}
+
+header {
+    background: #14213d;
+    color: white;
+    padding: 25px;
+    text-align: center;
+}
+
+nav {
+    background: #243b55;
+    padding: 15px;
+    text-align: center;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    margin: 12px;
+}
+
+.container {
+    max-width: 450px;
+    margin: 50px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px #0002;
+}
+
+h2 {
+    text-align: center;
+    color: #14213d;
+}
+
+label {
+    display: block;
+    margin-top: 20px;
+    font-weight: bold;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button {
+    width: 100%;
+    padding: 15px;
+    background: orange;
+    border: none;
+    border-radius: 5px;
+    margin-top: 25px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #e69500;
+}
+
+.register-link {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.message {
+    margin-top: 15px;
+    color: #b42318;
+    text-align: center;
+}
+
+footer {
+    background: #14213d;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    margin-top: 50px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>GRAND LUXE HOTEL</h1>
+    <p>Customer Login</p>
+</header>
+
+<nav>
+    <a href="index.html">Home</a>
+    <a href="rooms.html">Rooms</a>
+    <a href="login.html">Login</a>
+    <a href="register.html">Register</a>
+</nav>
+
+<div class="container">
+
+    <h2>Welcome Back</h2>
+
+    <form id="loginForm">
+
+        <label for="email">Email Address</label>
+        <input
+            type="email"
+            id="email"
+            placeholder="Enter your email"
+            autocomplete="email"
+            required
+        >
+
+        <label for="password">Password</label>
+        <input
+            type="password"
+            id="password"
+            placeholder="Enter your password"
+            autocomplete="current-password"
+            required
+        >
+
+        <button type="submit">Login</button>
+
+        <p class="message" id="message"></p>
+
+    </form>
+
+    <div class="register-link">
+        <p>
+            Don't have an account?
+            <a href="register.html">Register Here</a>
+        </p>
+    </div>
+
+</div>
+
+<footer>
+    <p>2026 Grand Luxe Hotel. All Rights Reserved.</p>
+</footer>
+
+
+
+
+<!-- Load Supabase library -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Load your Supabase configuration -->
+<script src="./supabase.js"></script>
+
+<script>
+const loginForm = document.getElementById("loginForm");
+const message = document.getElementById("message");
+
+loginForm.addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+
+    message.style.color = "#14213d";
+    message.textContent = "Logging in...";
+
+    try {
+        if (!window.supabaseClient) {
+            throw new Error("Supabase client is not loaded.");
+        }
+
+        // Log in
+        const { data, error } =
+            await window.supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+        if (error) {
+            throw error;
+        }
+
+        if (!data.session) {
+            throw new Error("Login did not create a session.");
+        }
+
+        // Check administrator role
+        const { data: isAdmin, error: adminError } =
+            await window.supabaseClient.rpc("is_admin");
+
+        if (adminError) {
+            throw adminError;
+        }
+
+        message.style.color = "green";
+        message.textContent = "Login successful! Redirecting...";
+
+        // Redirect based on account role
+        if (isAdmin === true) {
+            window.location.href = "admin.html";
+        } else {
+            window.location.href = "rooms.html";
+        }
+
+    } catch (error) {
+        message.style.color = "red";
+        message.textContent =
+            "Login error: " + (error.message || String(error));
+    }
+});
+</script>
+
+</body>
+</html>
+
+
+
+</body>
+</html>

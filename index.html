@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Hotel Reservation System</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+        }
+
+        header {
+            background: #14213d;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        nav {
+            background: #243b55;
+            padding: 15px;
+            text-align: center;
+        }
+
+        nav a {
+            color: white;
+            margin: 15px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        nav a:hover {
+            text-decoration: underline;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 90px 20px;
+            background: #e5e5e5;
+        }
+
+        .hero h1 {
+            font-size: 38px;
+        }
+
+        .explore-btn {
+            background: orange;
+            color: black;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+        }
+
+        .explore-btn:hover {
+            background: #e69500;
+        }
+
+        footer {
+            background: #14213d;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>GRAND LUXE HOTEL</h1>
+    <p>Hotel Reservation System</p>
+</header>
+
+<nav>
+    <a href="index.html">Home</a>
+    <a href="rooms.html">Rooms</a>
+    <a href="booking.html">Book a Room</a>
+    <a href="my-bookings.html">My Bookings</a>
+
+    <a href="login.html" id="loginLink">Login</a>
+    <a href="register.html" id="registerLink">Register</a>
+
+    <a href="#" id="logoutLink" hidden>Logout</a>
+</nav>
+
+<section class="hero">
+    <h1>Welcome to Grand Luxe Hotel</h1>
+
+    <p>Experience luxury, comfort and excellent service.</p>
+
+    <a href="./rooms.html" class="explore-btn">
+        Explore Rooms
+    </a>
+</section>
+
+<footer>
+    <p>2026 Grand Luxe Hotel. All Rights Reserved.</p>
+</footer>
+
+<!-- Load Supabase library -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Load your existing Supabase configuration -->
+<script src="./supabase.js"></script>
+
+<script>
+    const loginLink = document.getElementById("loginLink");
+    const registerLink = document.getElementById("registerLink");
+    const logoutLink = document.getElementById("logoutLink");
+
+    async function checkLoginStatus() {
+        try {
+            if (!window.supabaseClient) {
+                console.error("Supabase client not loaded.");
+                return;
+            }
+
+            const {
+                data: { session },
+                error
+            } = await window.supabaseClient.auth.getSession();
+
+            if (error) {
+                throw error;
+            }
+
+            const isLoggedIn = !!session;
+
+            loginLink.hidden = isLoggedIn;
+            registerLink.hidden = isLoggedIn;
+            logoutLink.hidden = !isLoggedIn;
+
+        } catch (error) {
+            console.error("Login status error:", error);
+        }
+    }
+
+    logoutLink.addEventListener("click", async function(event) {
+        event.preventDefault();
+
+        try {
+            const { error } =
+                await window.supabaseClient.auth.signOut();
+
+            if (error) {
+                throw error;
+            }
+
+            window.location.href = "login.html";
+
+        } catch (error) {
+            alert("Logout failed: " + error.message);
+        }
+    });
+
+    checkLoginStatus();
+</script>
+
+</body>
+</html>

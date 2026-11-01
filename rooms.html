@@ -1,0 +1,277 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Our Rooms - Grand Luxe Hotel</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+}
+
+header {
+    background: #14213d;
+    color: white;
+    text-align: center;
+    padding: 25px;
+}
+
+nav {
+    background: #243b55;
+    padding: 15px;
+    text-align: center;
+}
+
+nav a {
+    color: white;
+    margin: 12px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
+h2 {
+    text-align: center;
+    margin-top: 35px;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 25px;
+    padding: 30px;
+}
+
+.room {
+    background: white;
+    width: 300px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px #0002;
+}
+
+.room img {
+    width: 100%;
+    height: 190px;
+    object-fit: cover;
+}
+
+.room-info {
+    padding: 20px;
+}
+
+.room-info h3 {
+    color: #14213d;
+}
+
+.price {
+    font-size: 20px;
+    font-weight: bold;
+    color: #d97706;
+}
+
+.btn {
+    display: inline-block;
+    background: orange;
+    color: black;
+    padding: 12px 22px;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.btn:hover {
+    background: #e69500;
+}
+
+footer {
+    background: #14213d;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    margin-top: 30px;
+}
+
+[hidden] {
+    display: none !important;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>GRAND LUXE HOTEL</h1>
+    <p>Discover Our Beautiful Rooms</p>
+</header>
+
+<nav>
+    <a href="index.html">Home</a>
+    <a href="rooms.html">Rooms</a>
+    <a href="booking.html">Book a Room</a>
+    <a href="my-bookings.html">My Bookings</a>
+
+    <a href="login.html" id="loginLink">Login</a>
+    <a href="register.html" id="registerLink">Register</a>
+    <a href="#" id="logoutLink" hidden>Logout</a>
+</nav>
+
+<h2>Available Hotel Rooms</h2>
+
+<div class="container">
+
+    <!-- SINGLE ROOM -->
+    <div class="room">
+        <img src="https://images.unsplash.com/photo-1631049307264-da0ec9d70304"
+             alt="Single Room">
+
+        <div class="room-info">
+            <h3>Single Room</h3>
+            <p>Comfortable room for one guest.</p>
+            <p>Free Wi-Fi, TV and breakfast.</p>
+            <p class="price">$50 / Night</p>
+
+            <a href="booking.html?room=Single" class="btn">
+                Book Now
+            </a>
+        </div>
+    </div>
+
+    <!-- DOUBLE ROOM -->
+    <div class="room">
+        <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32"
+             alt="Double Room">
+
+        <div class="room-info">
+            <h3>Double Room</h3>
+            <p>Perfect room for two guests.</p>
+            <p>Double bed, Wi-Fi and breakfast.</p>
+            <p class="price">$90 / Night</p>
+
+            <a href="booking.html?room=Double" class="btn">
+                Book Now
+            </a>
+        </div>
+    </div>
+
+    <!-- DELUXE ROOM -->
+    <div class="room">
+        <img src="https://images.unsplash.com/photo-1590490360182-c33d57733427"
+             alt="Deluxe Room">
+
+        <div class="room-info">
+            <h3>Deluxe Room</h3>
+            <p>Luxury room with premium facilities.</p>
+            <p>King-size bed, balcony and Wi-Fi.</p>
+            <p class="price">$150 / Night</p>
+
+            <a href="booking.html?room=Deluxe" class="btn">
+                Book Now
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    <p>2026 Grand Luxe Hotel. All Rights Reserved.</p>
+</footer>
+
+<!-- Load Supabase library ONCE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Load your existing Supabase configuration -->
+<script src="./supabase.js"></script>
+
+<script>
+const loginLink = document.getElementById("loginLink");
+const registerLink = document.getElementById("registerLink");
+const logoutLink = document.getElementById("logoutLink");
+
+async function checkLoginStatus() {
+    try {
+        if (!window.supabaseClient) {
+            throw new Error("Supabase client not loaded.");
+        }
+
+        const {
+            data: { session },
+            error
+        } = await window.supabaseClient.auth.getSession();
+
+        if (error) {
+            throw error;
+        }
+
+        const isLoggedIn = !!session;
+
+        loginLink.hidden = isLoggedIn;
+        registerLink.hidden = isLoggedIn;
+        logoutLink.hidden = !isLoggedIn;
+
+    } catch (error) {
+        console.error("Login status error:", error);
+    }
+}
+
+logoutLink.addEventListener("click", async function(event) {
+    event.preventDefault();
+
+    try {
+        const { error } =
+            await window.supabaseClient.auth.signOut();
+
+        if (error) {
+            throw error;
+        }
+
+        window.location.href = "login.html";
+
+    } catch (error) {
+        alert("Logout failed: " + error.message);
+    }
+});
+
+// Check database connection without unnecessary popup
+async function testConnection() {
+    try {
+        const { data, error } = await window.supabaseClient
+            .from("rooms")
+            .select("*");
+
+        if (error) {
+            console.error("Database error:", error.message);
+        } else {
+            console.log(
+                "Connected to Supabase. Found " +
+                data.length + " rooms."
+            );
+        }
+
+    } catch (error) {
+        console.error("Connection error:", error.message);
+    }
+}
+
+checkLoginStatus();
+
+if (window.supabaseClient) {
+    testConnection();
+}
+</script>
+
+</body>
+</html>

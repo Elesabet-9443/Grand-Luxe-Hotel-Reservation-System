@@ -1,0 +1,390 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Book a Room - Grand Luxe Hotel</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+}
+
+header {
+    background: #14213d;
+    color: white;
+    padding: 25px;
+    text-align: center;
+}
+
+nav {
+    background: #243b55;
+    padding: 15px;
+    text-align: center;
+}
+
+nav a {
+    color: white;
+    margin: 12px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
+.container {
+    max-width: 550px;
+    margin: 40px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px #0002;
+}
+
+h2 {
+    text-align: center;
+    color: #14213d;
+}
+
+label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+input, select {
+    width: 100%;
+    padding: 12px;
+    margin-top: 7px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button {
+    width: 100%;
+    padding: 15px;
+    background: orange;
+    border: none;
+    border-radius: 5px;
+    margin-top: 25px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.total {
+    background: #f0f4f8;
+    padding: 15px;
+    margin-top: 20px;
+    border-radius: 5px;
+    font-size: 20px;
+    text-align: center;
+}
+
+footer {
+    background: #14213d;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+[hidden] {
+    display: none !important;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>GRAND LUXE HOTEL</h1>
+    <p>Room Reservation</p>
+</header>
+
+<nav>
+    <a href="index.html">Home</a>
+    <a href="rooms.html">Rooms</a>
+    <a href="booking.html">Book a Room</a>
+    <a href="my bookings.html">My Bookings</a>
+
+    <a href="login.html" id="loginLink">Login</a>
+    <a href="register.html" id="registerLink">Register</a>
+    <a href="#" id="logoutLink" hidden>Logout</a>
+</nav>
+
+<div class="container">
+
+    <h2>Book Your Room</h2>
+
+    <form id="bookingForm">
+
+        <label for="name">Full Name</label>
+        <input type="text" id="name" required>
+
+        <label for="email">Email Address</label>
+        <input type="email" id="email" required>
+
+        <label for="phone">Phone Number</label>
+        <input type="tel" id="phone" required>
+
+        <label for="room">Select Room</label>
+        <select id="room" required>
+            <option value="">Choose a Room</option>
+            <option value="Single">Single Room - $50</option>
+            <option value="Double">Double Room - $90</option>
+            <option value="Deluxe">Deluxe Room - $150</option>
+        </select>
+
+        <label for="checkin">Check-in Date</label>
+        <input type="date" id="checkin" required>
+
+        <label for="checkout">Check-out Date</label>
+        <input type="date" id="checkout" required>
+
+        <div class="total">
+            Total Price: <strong id="total">$0</strong>
+        </div>
+
+        <button type="submit" id="bookingButton">
+            Confirm Booking
+        </button>
+
+    </form>
+
+</div>
+
+<footer>
+    <p>2026 Grand Luxe Hotel. All Rights Reserved.</p>
+</footer>
+
+<!-- Load Supabase library -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Load your existing Supabase configuration -->
+<script src="./supabase.js"></script>
+
+<script>
+const prices = {
+    Single: 50,
+    Double: 90,
+    Deluxe: 150
+};
+
+const room = document.getElementById("room");
+const checkin = document.getElementById("checkin");
+const checkout = document.getElementById("checkout");
+const total = document.getElementById("total");
+
+const loginLink = document.getElementById("loginLink");
+const registerLink = document.getElementById("registerLink");
+const logoutLink = document.getElementById("logoutLink");
+
+const bookingForm = document.getElementById("bookingForm");
+const bookingButton = document.getElementById("bookingButton");
+
+// Check login status and update navigation
+async function checkLoginStatus() {
+    try {
+        if (!window.supabaseClient) {
+            throw new Error("Supabase client not loaded.");
+        }
+
+        const {
+            data: { session },
+            error
+        } = await window.supabaseClient.auth.getSession();
+
+        if (error) {
+            throw error;
+        }
+
+        const isLoggedIn = !!session;
+
+        loginLink.hidden = isLoggedIn;
+        registerLink.hidden = isLoggedIn;
+        logoutLink.hidden = !isLoggedIn;
+
+    } catch (error) {
+        console.error("Login status error:", error);
+    }
+}
+
+// Logout
+logoutLink.addEventListener("click", async function(event) {
+    event.preventDefault();
+
+    try {
+        const { error } =
+            await window.supabaseClient.auth.signOut();
+
+        if (error) {
+            throw error;
+        }
+
+        window.location.href = "login.html";
+
+    } catch (error) {
+        alert("Logout failed: " + error.message);
+    }
+});
+
+// Automatically select room from Rooms page
+const params = new URLSearchParams(window.location.search);
+const selectedRoom = params.get("room");
+
+if (Object.prototype.hasOwnProperty.call(prices, selectedRoom)) {
+    room.value = selectedRoom;
+}
+
+// Set minimum booking dates
+function getLocalToday() {
+    const today = new Date();
+
+    return [
+        today.getFullYear(),
+        String(today.getMonth() + 1).padStart(2, "0"),
+        String(today.getDate()).padStart(2, "0")
+    ].join("-");
+}
+
+const localToday = getLocalToday();
+
+checkin.min = localToday;
+checkout.min = localToday;
+
+// Calculate total booking price
+function calculateTotal() {
+    const price = prices[room.value];
+
+    if (!price || !checkin.value || !checkout.value) {
+        total.textContent = "$0";
+        return 0;
+    }
+
+    const start = new Date(checkin.value + "T00:00:00");
+    const end = new Date(checkout.value + "T00:00:00");
+
+    const nights = Math.round(
+        (end - start) / (1000 * 60 * 60 * 24)
+    );
+
+    if (nights <= 0 || checkin.value < getLocalToday()) {
+        total.textContent = "$0";
+        return 0;
+    }
+
+    const amount = nights * price;
+
+    total.textContent = "$" + amount;
+
+    return amount;
+}
+
+// Update total when booking information changes
+room.addEventListener("change", calculateTotal);
+checkin.addEventListener("change", function() {
+    checkout.min = checkin.value || getLocalToday();
+    calculateTotal();
+});
+checkout.addEventListener("change", calculateTotal);
+
+// Save reservation in Supabase
+bookingForm.addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    const amount = calculateTotal();
+
+    if (amount <= 0) {
+        alert("Please select valid reservation dates.");
+        return;
+    }
+
+    if (!window.supabaseClient) {
+        alert("Supabase connection is unavailable.");
+        return;
+    }
+
+    bookingButton.disabled = true;
+    bookingButton.textContent = "Saving booking...";
+
+    try {
+        const {
+            data: { user },
+            error: authError
+        } = await window.supabaseClient.auth.getUser();
+
+        if (authError || !user) {
+            alert("Please log in before booking a room.");
+            window.location.href = "login.html";
+            return;
+        }
+
+        const roomIds = {
+            Single: 1,
+            Double: 2,
+            Deluxe: 3
+        };
+
+        const roomId = roomIds[room.value];
+
+        if (!roomId) {
+            alert("Please select a valid room.");
+            return;
+        }
+
+        const { error } = await window.supabaseClient
+            .from("bookings")
+            .insert({
+                user_id: user.id,
+                room_id: roomId,
+                check_in: checkin.value,
+                check_out: checkout.value,
+                status: "pending"
+            });
+
+        if (error) {
+            if (error.code === "23P01") {
+                alert(
+                    "Sorry, this room is already booked for those dates. " +
+                    "Please choose different dates."
+                );
+            } else {
+                alert("Booking error: " + error.message);
+            }
+            return;
+        }
+
+        alert("Booking saved successfully! Status: Pending.");
+
+        bookingForm.reset();
+        total.textContent = "$0";
+        checkout.min = getLocalToday();
+
+    } catch (error) {
+        alert("Connection error: " + error.message);
+
+    } finally {
+        bookingButton.disabled = false;
+        bookingButton.textContent = "Confirm Booking";
+    }
+});
+
+checkLoginStatus();
+</script>
+
+</body>
+</html>

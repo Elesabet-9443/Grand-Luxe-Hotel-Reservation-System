@@ -1,0 +1,304 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Customer Registration - Grand Luxe Hotel</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+        }
+
+        header {
+            background: #14213d;
+            color: white;
+            text-align: center;
+            padding: 25px;
+        }
+
+        nav {
+            background: #243b55;
+            padding: 15px;
+            text-align: center;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 12px;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 45px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px #0002;
+        }
+
+        h2 {
+            text-align: center;
+            color: #14213d;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 7px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: orange;
+            border: none;
+            border-radius: 5px;
+            margin-top: 25px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #e69500;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #message {
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        footer {
+            background: #14213d;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>GRAND LUXE HOTEL</h1>
+    <p>Customer Registration</p>
+</header>
+
+<nav>
+    <a href="index.html">Home</a>
+    <a href="rooms.html">Rooms</a>
+    <a href="login.html">Login</a>
+    <a href="register.html">Register</a>
+</nav>
+
+<div class="container">
+
+    <h2>Create Your Account</h2>
+
+    <form id="registerForm">
+
+        <label for="fullname">Full Name</label>
+        <input
+            type="text"
+            id="fullname"
+            placeholder="Enter your full name"
+            required
+        >
+
+        <label for="email">Email Address</label>
+        <input
+            type="email"
+            id="email"
+            placeholder="Enter your email"
+            required
+        >
+
+        <label for="phone">Phone Number</label>
+        <input
+            type="tel"
+            id="phone"
+            placeholder="Enter phone number"
+            required
+        >
+
+        <label for="password">Password</label>
+        <input
+            type="password"
+            id="password"
+            placeholder="Create password"
+            minlength="8"
+            required
+        >
+
+        <label for="confirmPassword">Confirm Password</label>
+        <input
+            type="password"
+            id="confirmPassword"
+            placeholder="Confirm password"
+            minlength="8"
+            required
+        >
+
+        <button type="submit" id="registerButton">
+            Register
+        </button>
+
+        <p id="message" role="status"></p>
+
+    </form>
+
+    <div class="login-link">
+        <p>
+            Already have an account?
+            <a href="login.html">Login Here</a>
+        </p>
+    </div>
+
+</div>
+
+<footer>
+    <p>2026 Grand Luxe Hotel. All Rights Reserved.</p>
+</footer>
+
+<!-- FIRST: Load Supabase library -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- SECOND: Load your connection file -->
+<script src="./supabase.js"></script>
+
+<!-- THIRD: Registration functionality -->
+<script>
+const registerForm = document.getElementById("registerForm");
+const registerButton = document.getElementById("registerButton");
+const message = document.getElementById("message");
+
+registerForm.addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    message.textContent = "";
+
+    if (typeof supabaseClient === "undefined") {
+        message.style.color = "red";
+        message.textContent =
+            "Supabase connection failed. Check supabase.js.";
+        return;
+    }
+
+    const fullname =
+        document.getElementById("fullname").value.trim();
+
+    const email =
+        document.getElementById("email").value.trim();
+
+    const phone =
+        document.getElementById("phone").value.trim();
+
+    const password =
+        document.getElementById("password").value;
+
+    const confirmPassword =
+        document.getElementById("confirmPassword").value;
+
+    if (password !== confirmPassword) {
+        message.style.color = "red";
+        message.textContent = "Passwords do not match!";
+        return;
+    }
+
+    if (password.length < 8) {
+        message.style.color = "red";
+        message.textContent =
+            "Password must contain at least 8 characters.";
+        return;
+    }
+
+    registerButton.disabled = true;
+    registerButton.textContent = "Registering...";
+
+    try {
+
+        const { data, error } =
+            await supabaseClient.auth.signUp({
+
+                email: email,
+
+                password: password,
+
+                options: {
+                    data: {
+                        full_name: fullname,
+                        phone: phone
+                    }
+                }
+
+            });
+
+        if (error) {
+            message.style.color = "red";
+            message.textContent =
+                "Registration error: " + error.message;
+            return;
+        }
+
+        message.style.color = "green";
+
+        if (data.session) {
+            message.textContent =
+                "Registration successful! Your account is ready.";
+        } else {
+            message.textContent =
+                "Registration request received. If email confirmation " +
+                "is enabled, please check your inbox.";
+        }
+
+        registerForm.reset();
+
+    } catch (error) {
+
+        message.style.color = "red";
+        message.textContent =
+            "Connection error: " + error.message;
+
+    } finally {
+
+        registerButton.disabled = false;
+        registerButton.textContent = "Register";
+
+    }
+
+});
+</script>
+
+</body>
+</html>
